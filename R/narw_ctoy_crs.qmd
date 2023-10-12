@@ -1,0 +1,193 @@
+---
+title: "Importance of CRS for Extracting Raster Data to Polygons"
+format: html
+editor: visual
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+# load libraries
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+library(boemWind)
+source(here::here('R', 'utils.R'), echo = FALSE)
+
+# Duke color scale
+duke_colors = c('#7a0402', '#b01c02', '#d93b07', '#f26518', '#fc9c2d', '#f2c738', '#d0e835', '#a3fc3d', '#65fc6a', '#2deba2', '#24ced4', '#39a8f7', '#4678eb', '#4346ab', '#30123b')
+
+# month order
+month_order = c('October', 'November', 'December', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September')
+```
+
+Quick look at the North Atlantic Right Whale (NARW) densities from Duke. Superimposed are the CTOY regions and active lease Wind Energy Areas (WEAs; although they are hard to see).
+
+```{r narw-data, echo = FALSE, fig.height = 8, fig.width = 8}
+####################
+## NARW densities ##
+####################
+
+# read in Duke maps 
+narw_dens = here::here('data-raw', 'rasters', 'EC_North_Atlantic_right_whale_v12.1', 'Rasters', '2010-2019') |>
+  list.files(pattern = '*density.*\\.img$', full.names = TRUE) |>
+  purrr::map(.x  = _, .f = function(.x) 1 * terra::rast(.x)) |>
+  terra::rast()
+names(narw_dens) = month.name
+
+#############
+## Regions ##
+#############
+
+# ctoy region shapefile
+ctoy_regions = here::here('data-raw', 'shapefiles', 'regions', 'CTOY_Investigation.shp') |>
+  sf::st_read(quiet = TRUE) |>
+  dplyr::mutate(ID = 1:dplyr::n()) 
+
+##########
+## WEAs ##
+##########
+
+# filter to get active lease areas
+active_weas = boem_wea_outlines |>
+  dplyr::filter(LEASE_STAGE == 'Active' & !STATE %in% c('CA', 'North Carolina', ' Louisanna/Texas') & LEASE_TYPE != 'Easement' & LEASE_NUMBER_COMPANY != 'OCS-A 0506 - The Narragansett Electric Company') |>
+  dplyr::mutate(ID = 1:n())
+
+#########
+## Map ##
+#########
+
+# data for ggplot2
+narw_gg = as.data.frame(narw_dens, xy = TRUE) |> 
+  tidyr::pivot_longer(cols = January:December, names_to = 'month', values_to = 'value') |>
+  dplyr::mutate(month = factor(month, levels = month_order)) |>
+  dplyr::mutate(fill = cut(value, breaks = c(6.3, 4, 2.5, 1.6, 1, 0.63, 0.40, 0.25, 0.16, 0.10, 0.063, 0.040, 0.025, 0.016, 0), include.lowest = TRUE))
+
+# ggplot2
+ggplot(data = narw_gg) + 
+  geom_raster(aes(x = x, y = y, fill = fill)) + 
+  geom_sf(data = ctoy_regions, fill = 'transparent', color = 'white') +
+  geom_sf(data = active_weas, fill = 'transparent', color = 'white') +
+  facet_wrap(~month) + 
+  theme_cowplot() +
+  scale_fill_manual(
+    values = rev(duke_colors), 
+    guide = guide_legend(reverse = TRUE),
+    name = 'whales / 100km2') + 
+  coord_sf(crs = sf::st_crs(narw_dens)) + 
+  labs(x = NULL, y = NULL) + 
+  theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold')) + 
+  scale_x_continuous(breaks = c(-80, -70))
+```
+
+It's unclear to what extent the Coordinate Reference System (CRS) will have on extracting NARW densities from the raster data provided by Duke. To explore this, we extracted NARW densities to active lease WEAs near Massachusetts and Rhode Island. The first CRS used was a bespoke Albers equal area projection developed by Duke (CetMap_NA), while the second CRS used was UTM (UTM NAD83 Zone 19N). A boxplot of the extracted NARW densities by month and WEA is shown below for each CRS.
+
+```{r test-crs, echo = FALSE, fig.width = 8, fig.height = 8}
+#################################
+## Test CRS using MA / RI WEAs ##
+#################################
+
+# order of WEAs for faceting
+wea_order = c('OCS-A 0522', # Vineyard Northeast LLC
+              'OCS-A 0521', # SouthCoast Wind Energy LLC
+              'OCS-A 0520', # Beacon Wind LLC
+              'OCS-A 0534', # Park City Wind LLC
+              'OCS-A 0501', # Vineyard Wind LLC
+              'OCS-A 0500', # Bay State Wind LLC
+              'OCS-A 0487', # Sunrise Wind LLC
+              'OCS-A 0517', # South Fork Wind, LLC
+              'OCS-A 0486'  # Revolution Wind, LLC
+)
+
+# UTM zone
+# mari_weas = active_weas |> 
+#   dplyr::filter(LEASE_NUMBER %in% wea_order) |> 
+#   sf::st_coordinates() 
+# any(mari_weas[, 1]  < -72) # UTM zone 19
+
+# extract by region / month using Duke CRS
+weas_duke = active_weas |>
+  sf::st_transform(crs = sf::st_crs(narw_dens))
+narw_duke = purrr::map_dfr(.x = 1:12, .f = function(.s) {
+  terra::extract(x = narw_dens[[month.name[.s]]], y = weas_duke, ID = TRUE) |> 
+    dplyr::left_join(weas_duke |> sf::st_drop_geometry() |> dplyr::select(LEASE_NUMBER, ID), by = 'ID') |>
+    dplyr::mutate(MONTH = .s) |>
+    dplyr::rename(VALUE = month.name[.s], WEA = LEASE_NUMBER)
+}) |>
+  dplyr::filter(WEA %in% wea_order) |>
+  dplyr::mutate(CRS = 'CetMap_NA')
+
+# quick check
+# sf::st_crs(narw_dens) == sf::st_crs(weas_duke)
+
+# extract by region / month using UTM
+weas_utm = active_weas |>
+  sf::st_transform(crs = sf::st_crs('+proj=utm +zone=19 +ellps=GRS80 +datum=NAD83 +units=m +no_defs'))
+narw_dens_utm = narw_dens |>
+  terra::project('+proj=utm +zone=19 +ellps=GRS80 +datum=NAD83 +units=m +no_defs')
+narw_utm = purrr::map_dfr(.x = 1:12, .f = function(.s) {
+  terra::extract(x = narw_dens_utm[[month.name[.s]]], y = weas_utm, ID = TRUE) |> 
+    dplyr::left_join(weas_utm |> sf::st_drop_geometry() |> dplyr::select(LEASE_NUMBER, ID), by = 'ID') |>
+    dplyr::mutate(MONTH = .s) |>
+    dplyr::rename(VALUE = month.name[.s], WEA = LEASE_NUMBER)
+}) |>
+  dplyr::filter(WEA %in% wea_order) |>
+  dplyr::mutate(CRS = 'UTM NAD83 Zone 19N')
+
+# quick check
+# sf::st_crs(narw_dens_utm) == sf::st_crs(weas_utm)
+
+# comparison
+narw_crs = dplyr::bind_rows(narw_duke, narw_utm) |>
+  dplyr::mutate(WEA = factor(WEA, levels = wea_order),
+                MONTH = factor(MONTH, levels = c(10:12, 1:9)))
+
+# dodged boxplot
+ggplot(data = narw_crs, aes(x = MONTH, y = VALUE, fill = CRS, group = interaction(MONTH, WEA, CRS))) +
+  stat_summary(fun.data = boxplot_stat, geom = 'boxplot', position = 'dodge') + 
+  facet_wrap(~WEA) + 
+  theme_cowplot() + 
+  theme(legend.position = 'bottom', strip.background = element_blank(), strip.text = element_text(face = 'bold', hjust = 0)) + 
+  labs(x = 'month', y = 'whales per 100 km2')
+```
+Another way to visualize the differences in the CRSs is to superimpose the MA / RI WEAs on a map of the NARW density rasters provided by Duke.
+
+```{r map-crs, echo = FALSE, fig.width = 7, fig.height = 8}
+# map Duke CRS
+mari_bbox_duke = weas_duke |> 
+  dplyr::filter(LEASE_NUMBER %in% wea_order) |>
+  sf::st_bbox()
+plt_duke = ggplot(data = narw_gg |> dplyr::filter(month == 'February')) + 
+  geom_raster(aes(x = x, y = y, fill = fill)) + 
+  geom_sf(data = weas_duke |> dplyr::filter(LEASE_NUMBER %in% wea_order), fill = 'transparent', color = 'black') +
+  theme_cowplot() +
+  scale_fill_manual(
+    values = rev(duke_colors), 
+    guide = guide_legend(reverse = TRUE),
+    name = 'whales / 100km2') + 
+  coord_sf(xlim = mari_bbox_duke[c('xmin', 'xmax')], ylim = mari_bbox_duke[c('ymin', 'ymax')]) + 
+  labs(x = NULL, y = NULL, title = 'CetMap_NA', subtitle = 'February') + 
+  theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold')) 
+
+# map UTM CRS
+narw_gg_utm = as.data.frame(narw_dens_utm, xy = TRUE) |> 
+  tidyr::pivot_longer(cols = January:December, names_to = 'month', values_to = 'value') |>
+  dplyr::mutate(month = factor(month, levels = month_order)) |>
+  dplyr::mutate(fill = cut(value, breaks = c(6.3, 4, 2.5, 1.6, 1, 0.63, 0.40, 0.25, 0.16, 0.10, 0.063, 0.040, 0.025, 0.016, 0), include.lowest = TRUE))
+mari_bbox_utm = weas_utm |> 
+  dplyr::filter(LEASE_NUMBER %in% wea_order) |>
+  sf::st_bbox()
+plt_utm = ggplot(data = narw_gg_utm |> dplyr::filter(month == 'February')) + 
+  geom_raster(aes(x = x, y = y, fill = fill)) + 
+  geom_sf(data = weas_utm |> dplyr::filter(LEASE_NUMBER %in% wea_order), fill = 'transparent', color = 'black') +
+  theme_cowplot() +
+  scale_fill_manual(
+    values = rev(duke_colors), 
+    guide = guide_legend(reverse = TRUE),
+    name = 'whales / 100km2') + 
+  coord_sf(xlim = mari_bbox_utm[c('xmin', 'xmax')], ylim = mari_bbox_utm[c('ymin', 'ymax')]) + 
+  labs(x = NULL, y = NULL, title = 'UTM NAD83 Zone 19N', subtitle = 'February') + 
+  theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold')) 
+
+# combine
+plt = do.call(rbind, lapply(list(plt_duke, plt_utm), ggplotGrob))
+gridExtra::grid.arrange(plt)
+```

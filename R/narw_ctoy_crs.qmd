@@ -147,7 +147,7 @@ ggplot(data = narw_crs, aes(x = MONTH, y = VALUE, fill = CRS, group = interactio
   theme_cowplot() + 
   theme(legend.position = 'bottom', strip.background = element_blank(), strip.text = element_text(face = 'bold', hjust = 0)) + 
   labs(x = 'month', y = 'whales per 100 km2') + 
-  geom_hline(yintercept = 1) # 1 whale / 100km2 -> (4 whales / 342.99 km2) * 100
+  geom_hline(yintercept = 1, linetype = 'dashed') # 1 whale / 100km2 -> (4 whales / 342.99 km2) * 100
 ```
 
 Another way to visualize the differences in the CRSs is to superimpose the MA / RI WEAs on a map of the NARW density rasters provided by Duke.

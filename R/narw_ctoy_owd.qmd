@@ -1,0 +1,81 @@
+---
+title: "Time of Year Restrictions for Offshore Wind Development"
+format: html
+editor: visual
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+# load libraries
+library(sf)
+library(ggplot2)
+library(cowplot)
+library(boemWind)
+source(here::here('R', 'utils.R'), echo = FALSE)
+
+# Duke color scale
+duke_colors = c('#7a0402', '#b01c02', '#d93b07', '#f26518', '#fc9c2d', '#f2c738', '#d0e835', '#a3fc3d', '#65fc6a', '#2deba2', '#24ced4', '#39a8f7', '#4678eb', '#4346ab', '#30123b')
+
+# month order
+month_order = c('October', 'November', 'December', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September')
+```
+
+```{r data, echo = FALSE, message = FALSE}
+# see ./R/scripts/prep_data.R
+
+################
+## NARW stuff ##
+################
+
+narw_coast = here::here('data', 'narw_dens_coast.rds') |>
+  readRDS()
+narw_region = here::here('data', 'narw_dens_ctoy.rds') |>
+  readRDS()
+narw_weas= here::here('data', 'narw_dens_weas.rds') |>
+  readRDS()
+narw_10km = here::here('data', 'narw_dens_weas_10km.rds') |>
+  readRDS()
+narw_40km = here::here('data', 'narw_dens_weas_40km.rds') |>
+  readRDS()
+
+############
+## Shapes ##
+############
+
+# ctoy regions
+ctoy_regions = here::here('data-raw', 'shapefiles', 'regions', 'CTOY_Investigation.shp') |>
+  sf::st_read(quiet = TRUE) 
+
+# BOEM active lease areas
+active_weas = boem_wea_outlines |>
+  dplyr::filter(LEASE_STAGE == 'Active' & !STATE %in% c('CA', ' Louisanna/Texas') & LEASE_TYPE != 'Easement' & LEASE_NUMBER_COMPANY != 'OCS-A 0506 - The Narragansett Electric Company') |>
+  sf::st_transform(crs = sf::st_crs(ctoy_regions))
+```
+
+Quick look at the North Atlantic Right Whale (NARW) densities from Duke. Superimposed are the CTOY regions and active lease Wind Energy Areas (WEAs; although they are hard to see).
+
+```{r narw-map, echo = FALSE, fig.width = 8, fig.height = 8}
+# data for ggplot2
+narw_gg = narw_coast |>
+  dplyr::mutate(x = sf::st_coordinates(geometry)[, 1], y = sf::st_coordinates(geometry)[, 2]) |>
+  sf::st_drop_geometry() |>
+  dplyr::mutate(month = factor(month, levels = month_order)) |>
+  dplyr::mutate(fill = cut(value * 100, breaks = c(6.3, 4, 2.5, 1.6, 1, 0.63, 0.40, 0.25, 0.16, 0.10, 0.063, 0.040, 0.025, 0.016, 0), include.lowest = TRUE))
+
+# ggplot2
+ggplot(data = narw_gg) + 
+  geom_raster(aes(x = x, y = y, fill = fill)) + 
+  geom_sf(data = ctoy_regions, fill = 'transparent', color = 'white') +
+  geom_sf(data = active_weas, fill = 'transparent', color = 'white') +
+  facet_wrap(~month) + 
+  theme_cowplot() +
+  scale_fill_manual(
+    values = rev(duke_colors), 
+    guide = guide_legend(reverse = TRUE),
+    name = 'whales / 100km2') + 
+  coord_sf(crs = sf::st_crs(narw_coast)) + 
+  labs(x = NULL, y = NULL) + 
+  theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold')) + 
+  scale_x_continuous(breaks = c(-80, -70))
+```
+
+Now we will extract a weighted average for each area to estimate the density of NARWs.

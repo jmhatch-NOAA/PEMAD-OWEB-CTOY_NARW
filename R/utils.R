@@ -95,34 +95,3 @@ boxplot_stat = function(x) {
   names(stats) <- c('ymin', 'lower', 'middle', 'upper', 'ymax')
   return(stats)
 }
-
-#' @titlet Create a \code{data.frame} from a raster image with cell ids and area calculations
-#' @name cell_id
-#'
-#' @param x A \code{SpatRaster}
-#' 
-#' @returns A \code{data.frame} with columns cell, x, y, value, and area
-#' 
-#' @export
-#' 
-cell_id = function(x) {
-  
-  # SpatRaster to data.frame
-  x_df = as.data.frame(x = x, xy = TRUE, cells = TRUE, na.rm = FALSE) |>
-    dplyr::rename(value = names(x))
-  
-  # add area calcs
-  x_area = terra::cellSize(x = x) |> 
-    as.data.frame(xy = TRUE, cells = TRUE, na.rm = FALSE) 
-  
-  # join
-  x_out = x_df |> 
-    dplyr::full_join(x_area, by = c('cell', 'x', 'y'))
-  
-  # quick check
-  stopifnot(nrow(x_df) == nrow(x_out) & nrow(x_area) == nrow(x_out))
-  
-  # output
-  return(x_out)
-  
-}

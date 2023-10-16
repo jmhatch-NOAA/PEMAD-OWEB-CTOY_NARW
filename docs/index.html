@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Importance of CRS for Extracting Raster Data to Polygons</title>
+<title>Time of Year Restrictions for Offshore Wind Development</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,16 +23,16 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="narw_ctoy_crs_files/libs/clipboard/clipboard.min.js"></script>
-<script src="narw_ctoy_crs_files/libs/quarto-html/quarto.js"></script>
-<script src="narw_ctoy_crs_files/libs/quarto-html/popper.min.js"></script>
-<script src="narw_ctoy_crs_files/libs/quarto-html/tippy.umd.min.js"></script>
-<script src="narw_ctoy_crs_files/libs/quarto-html/anchor.min.js"></script>
-<link href="narw_ctoy_crs_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="narw_ctoy_crs_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="narw_ctoy_crs_files/libs/bootstrap/bootstrap.min.js"></script>
-<link href="narw_ctoy_crs_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="narw_ctoy_crs_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="narw_ctoy_owd_files/libs/clipboard/clipboard.min.js"></script>
+<script src="narw_ctoy_owd_files/libs/quarto-html/quarto.js"></script>
+<script src="narw_ctoy_owd_files/libs/quarto-html/popper.min.js"></script>
+<script src="narw_ctoy_owd_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="narw_ctoy_owd_files/libs/quarto-html/anchor.min.js"></script>
+<link href="narw_ctoy_owd_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="narw_ctoy_owd_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="narw_ctoy_owd_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="narw_ctoy_owd_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="narw_ctoy_owd_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 
 
 </head>
@@ -45,7 +45,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Importance of CRS for Extracting Raster Data to Polygons</h1>
+<h1 class="title">Time of Year Restrictions for Offshore Wind Development</h1>
 </div>
 
 
@@ -63,21 +63,10 @@ ul.task-list li input[type="checkbox"] {
 <p>Quick look at the North Atlantic Right Whale (NARW) densities from Duke. Superimposed are the CTOY regions and active lease Wind Energy Areas (WEAs; although they are hard to see).</p>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="narw_ctoy_crs_files/figure-html/narw-data-1.png" class="img-fluid" width="768"></p>
+<p><img src="narw_ctoy_owd_files/figure-html/narw-map-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
-<p>It’s unclear to what extent the Coordinate Reference System (CRS) will have on extracting NARW densities from the raster data provided by Duke. To explore this, we extracted NARW densities to active lease WEAs near Massachusetts and Rhode Island. The first CRS used was a bespoke Albers equal area projection developed by Duke (CetMap_NA), while the second CRS used was a UTM projection (UTM NAD83 Zone 19N). A boxplot of the extracted NARW densities by month and WEA is shown below for each CRS.</p>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="narw_ctoy_crs_files/figure-html/test-crs-1.png" class="img-fluid" width="768"></p>
-</div>
-</div>
-<p>Another way to visualize the differences in the CRSs is to superimpose the MA / RI WEAs on a map of the NARW density rasters provided by Duke.</p>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="narw_ctoy_crs_files/figure-html/map-crs-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
+<p>Now we will extract a weighted average for each area to estimate the density of NARWs.</p>
 
 </main>
 <!-- /main column -->

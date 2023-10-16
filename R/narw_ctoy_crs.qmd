@@ -121,8 +121,16 @@ narw_duke = purrr::map_dfr(.x = 1:12, .f = function(.s) {
 # extract by region / month using UTM
 weas_utm = active_weas |>
   sf::st_transform(crs = sf::st_crs('+proj=utm +zone=19 +ellps=GRS80 +datum=NAD83 +units=m +no_defs'))
-narw_dens_utm = narw_dens |>
+narw_inds = (narw_dens / 100 * 25) |> 
   terra::project('+proj=utm +zone=19 +ellps=GRS80 +datum=NAD83 +units=m +no_defs')
+narw_dens_utm = narw_inds / (terra::cellSize(narw_inds) / (1000 * 1000)) * 100
+  
+# compare cell area
+# test_cetmap = cell_id(x = narw_dens[[1]]) |>
+#   dplyr::mutate(area = area / (1000 * 1000))
+# test_utm = cell_id(x = narw_inds[[1]]) |>
+#   dplyr::mutate(area = area / (1000 * 1000))
+
 narw_utm = purrr::map_dfr(.x = 1:12, .f = function(.s) {
   terra::extract(x = narw_dens_utm[[month.name[.s]]], y = weas_utm, ID = TRUE) |> 
     dplyr::left_join(weas_utm |> sf::st_drop_geometry() |> dplyr::select(LEASE_NUMBER, ID), by = 'ID') |>

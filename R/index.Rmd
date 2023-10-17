@@ -1,0 +1,203 @@
+---
+title: "Time of Year Restrictions for Offshore Wind Development"
+output: html_document
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# load libraries
+library(sf)
+library(ggplot2)
+library(cowplot)
+library(boemWind)
+source(here::here('R', 'utils.R'), echo = FALSE)
+
+# Duke color scale
+duke_colors = c('#7a0402', '#b01c02', '#d93b07', '#f26518', '#fc9c2d', '#f2c738', '#d0e835', '#a3fc3d', '#65fc6a', '#2deba2', '#24ced4', '#39a8f7', '#4678eb', '#4346ab', '#30123b')
+
+# month order
+month_order = c('October', 'November', 'December', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September')
+
+# month.abb
+month.abb = substr(month_order, 1, 3)
+
+# WEA order (roughly North to South)
+wea_order = c('OCS-A 0486', 'OCS-A 0517', 'OCS-A 0501', 'OCS-A 0487', 'OCS-A 0500', 'OCS-A 0534', 'OCS-A 0520', 'OCS-A 0521', 'OCS-A 0522', 'OCS-A 0512', 'OCS-A 0544', 'OCS-A 0537', 'OCS-A 0538', 'OCS-A 0539', 'OCS-A 0549', 'OCS-A 0541', 'OCS-A 0542', 'OCS-A 0499', 'OCS-A 0498', 'OCS-A 0532', 'OCS-A 0482', 'OCS-A 0519', 'OCS-A 0490', 'OCS-A 0483', 'OCS-A 0508', 'OCS-A 0545', 'OCS-A 0546')
+```
+
+```{r data}
+# see ./inst/scripts/prep_data.R
+
+################
+## NARW stuff ##
+################
+
+narw_weas= here::here('data', 'narw_dens_weas.rds') |>
+  readRDS() |>
+  dplyr::mutate(wea = factor(wea, levels = wea_order), month = factor(month, levels = month_order, labels = month.abb))
+narw_10km = here::here('data', 'narw_dens_weas_10km.rds') |>
+  readRDS() |>
+  dplyr::mutate(wea_10km = factor(wea_10km , levels = wea_order), month = factor(month, levels = month_order, labels = month.abb))
+narw_40km = here::here('data', 'narw_dens_weas_40km.rds') |>
+  readRDS() |>
+  dplyr::mutate(wea_40km  = factor(wea_40km , levels = wea_order), month = factor(month, levels = month_order, labels = month.abb))
+
+####################
+## NARW densities ##
+####################
+
+# coastwide
+dens_coast = narw_weas |>
+  sf::st_drop_geometry() |>
+  dplyr::group_by(month) |> 
+  dplyr::summarise(density = quantile(value, probs = 0.9, na.rm = TRUE)) |>
+  dplyr::ungroup()
+
+# region
+dens_region = narw_weas |>
+  dplyr::filter(!is.na(region)) |>
+  sf::st_drop_geometry() |>
+  dplyr::group_by(month, region) |> 
+  dplyr::summarise(density = quantile(value, probs = 0.9, na.rm = TRUE)) |>
+  dplyr::ungroup()
+  
+# wea
+dens_wea = narw_weas |>
+  dplyr::filter(!is.na(wea)) |>
+  sf::st_drop_geometry() |>
+  dplyr::group_by(month, wea) |> 
+  dplyr::summarise(density = quantile(value, probs = 0.9, na.rm = TRUE)) |>
+  dplyr::ungroup()
+  
+# 10km wea
+dens_10km = narw_10km |>
+  dplyr::filter(!is.na(wea_10km)) |>
+  sf::st_drop_geometry() |>
+  dplyr::group_by(month, wea_10km) |> 
+  dplyr::summarise(density = quantile(value, probs = 0.9, na.rm = TRUE)) |>
+  dplyr::ungroup()
+
+############
+## Shapes ##
+############
+
+# ctoy regions
+ctoy_regions = here::here('data-raw', 'shapefiles', 'regions', 'CTOY_Investigation.shp') |>
+  sf::st_read(quiet = TRUE) 
+
+# BOEM active lease areas
+active_weas = boem_wea_outlines |>
+  dplyr::filter(LEASE_STAGE == 'Active' & !STATE %in% c('CA', ' Louisanna/Texas') & LEASE_TYPE != 'Easement' & LEASE_NUMBER_COMPANY != 'OCS-A 0506 - The Narragansett Electric Company') |>
+  sf::st_transform(crs = sf::st_crs(ctoy_regions))
+```
+
+Quick look at the North Atlantic Right Whale (NARW) densities from MGEL, Duke University. Superimposed are the CTOY regions and active lease Wind Energy Areas (WEAs; although they are hard to see).
+
+```{r narw-map, fig.width = 8, fig.height = 8, fig.align = 'left'}
+# data for ggplot2
+narw_gg = narw_weas |>
+  dplyr::mutate(x = sf::st_coordinates(geometry)[, 1], y = sf::st_coordinates(geometry)[, 2]) |>
+  sf::st_drop_geometry() |>
+  dplyr::mutate(fill = cut(value * 100, breaks = c(6.3, 4, 2.5, 1.6, 1, 0.63, 0.40, 0.25, 0.16, 0.10, 0.063, 0.040, 0.025, 0.016, 0), include.lowest = TRUE))
+
+# ggplot2
+ggplot(data = narw_gg) + 
+  geom_raster(aes(x = x, y = y, fill = fill)) + 
+  geom_sf(data = ctoy_regions, fill = 'transparent', color = 'white') +
+  geom_sf(data = active_weas, fill = 'transparent', color = 'white') +
+  facet_wrap(~month) + 
+  theme_cowplot() +
+  scale_fill_manual(
+    values = rev(duke_colors), 
+    guide = guide_legend(reverse = TRUE),
+    name = 'whales / 100km2') + 
+  coord_sf(crs = sf::st_crs(narw_weas)) + 
+  labs(x = NULL, y = NULL) + 
+  theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold')) + 
+  scale_x_continuous(breaks = c(-80, -70))
+```
+
+Now a quick look at the distribution of seasonal NARW densities by active lease WEAs (roughly ordered from north to south). The upper whisker of the boxplots denote the 90th percentile, with the dashed line representing a density trigger of 1 whale / 100km2 (approximately the visual trigger for a DMA).
+
+```{r boxplot, fig.width = 8, fig.height = 50, fig.align = 'left'}
+ggplot(data = narw_weas |> sf::st_drop_geometry() |> dplyr::filter(!is.na(wea)), aes(x = month, y = value * 100, fill = month)) +
+  stat_summary(fun.data = boxplot_stat, geom = 'boxplot') + 
+  facet_wrap(~wea, ncol = 1, scales = 'free_y', drop = TRUE) + 
+  theme_cowplot() + 
+  theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold')) + 
+  labs(y = 'density (whales / 100km2)') + 
+  guides(fill = 'none') + 
+  geom_hline(yintercept = 1, linetype = 'dashed') # floor((4 / 100) / 3.429904 * 100)
+```
+
+Now some line charts showing the 90th percentile of NARW densities extracted from various areas: 1) entire coast, 2) regions, 3) active lease WEAs, 4) active lease WEAs buffered by 10km, and 5) active lease WEAs buffered by 40 km (not yet implemented).
+
+```{r trigger, fig.width = 8, fig.height = 50, fig.align = 'left'}
+# sequence of trigger values
+trigger = seq(0, 0.01, by = 0.001)[-1] # can't have the trigger be 0
+j = trigger[1]
+
+# loop through the weas and triggers
+plt_list = vector('list', length(wea_order))
+for (i in wea_order) {
+    
+    # filter data by wea
+    wea_filt = dens_wea |>
+      dplyr::filter(wea == i) |>
+      dplyr::mutate(constraint = '0km')
+    
+    # filter data by wea bufferd by 10km
+    wea_10km_filt = dens_10km |>
+      dplyr::filter(wea_10km == i) |>
+      dplyr::mutate(constraint = '10km') |>
+      dplyr::rename(wea = wea_10km)
+    
+    # what region?
+    wea_region = narw_weas |>
+      dplyr::filter(wea == i) |>
+      dplyr::distinct(region) |>
+      dplyr::pull(region)
+    
+    # region
+    region_filt = dens_region |>
+      dplyr::filter(region == wea_region) |>
+      dplyr::rename(constraint = region) |>
+      dplyr::mutate(wea = i)
+    
+    # coastwide
+    coast_filt = dens_coast |> 
+      dplyr::mutate(constraint = 'Coastwide', wea = i)
+    
+    # combine
+    data_gg = dplyr::bind_rows(wea_filt, wea_10km_filt, region_filt, coast_filt) |>
+      dplyr::mutate(constraint = factor(constraint, levels = c('0km', '10km', wea_region, 'Coastwide'))) |> 
+      dplyr::mutate(ctoy = ifelse(density > j, TRUE, FALSE))
+    
+    # plot
+    if (i == wea_order[length(wea_order)]) {
+      plt = ggplot(data = data_gg, aes(x = month, y = density * 100, color = constraint, group = constraint)) + 
+        geom_point(size = 3) +
+        geom_line(linewidth = 1) + 
+        theme_cowplot() + 
+        facet_wrap(~wea) + 
+        theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold'), legend.position = 'bottom', legend.title = element_blank()) + 
+        labs(x = NULL, y = NULL) 
+    } else {
+      plt = ggplot(data = data_gg, aes(x = month, y = density * 100, color = constraint, group = constraint)) + 
+        geom_point(size = 3) +
+        geom_line(linewidth = 1) + 
+        theme_cowplot() + 
+        facet_wrap(~wea) + 
+        theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold'), legend.position = 'bottom', legend.title = element_blank()) + 
+        labs(x = NULL, y = NULL) 
+    }
+
+    # add to plot list
+    plt_list[[which(wea_order %in% i)]] = plt
+}
+
+# plot
+narw_plts = do.call(rbind, lapply(plt_list, ggplotGrob))
+gridExtra::grid.arrange(narw_plts, left = grid::textGrob('density (whales / 100km2)', rot = 90, vjust = 0, gp = grid::gpar(fontsize = 14, fontface = 'bold')), bottom = grid::textGrob('month', vjust = 0, gp = grid::gpar(fontsize = 14, fontface = 'bold')))
+```

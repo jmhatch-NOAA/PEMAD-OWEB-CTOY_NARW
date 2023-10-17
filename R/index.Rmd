@@ -118,7 +118,7 @@ ggplot(data = narw_gg) +
   scale_x_continuous(breaks = c(-80, -70))
 ```
 
-Now a quick look at the distribution of seasonal NARW densities by active lease WEAs (roughly ordered from north to south). The upper whisker of the boxplots denote the 90th percentile, with the dashed line representing a density trigger of 1 whale / 100km2 (approximately the visual trigger for a DMA).
+Now a quick look at the distribution of seasonal NARW densities by active lease WEAs (roughly ordered from north to south). The upper whisker of the boxplots denotes the 90th percentile.
 
 ```{r boxplot, fig.width = 8, fig.height = 50, fig.align = 'left'}
 ggplot(data = narw_weas |> sf::st_drop_geometry() |> dplyr::filter(!is.na(wea)), aes(x = month, y = value * 100, fill = month)) +
@@ -127,8 +127,8 @@ ggplot(data = narw_weas |> sf::st_drop_geometry() |> dplyr::filter(!is.na(wea)),
   theme_cowplot() + 
   theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold')) + 
   labs(y = 'density (whales / 100km2)') + 
-  guides(fill = 'none') + 
-  geom_hline(yintercept = 1, linetype = 'dashed') # floor((4 / 100) / 3.429904 * 100)
+  guides(fill = 'none') 
+  # + geom_hline(yintercept = 1, linetype = 'dashed') # floor((4 / 100) / 3.429904 * 100)
 ```
 
 Now some line charts showing the 90th percentile of NARW densities extracted from various areas: 1) entire coast, 2) regions, 3) active lease WEAs, 4) active lease WEAs buffered by 10km, and 5) active lease WEAs buffered by 40 km (not yet implemented).
@@ -171,9 +171,9 @@ for (i in wea_order) {
     
     # combine
     data_gg = dplyr::bind_rows(wea_filt, wea_10km_filt, region_filt, coast_filt) |>
-      dplyr::mutate(constraint = factor(constraint, levels = c('0km', '10km', wea_region, 'Coastwide'))) |> 
+      dplyr::mutate(constraint = factor(constraint, levels = c('0km', '10km', wea_region, 'Coastwide'))) |>
       dplyr::mutate(ctoy = ifelse(density > j, TRUE, FALSE))
-    
+
     # plot
     if (i == wea_order[length(wea_order)]) {
       plt = ggplot(data = data_gg, aes(x = month, y = density * 100, color = constraint, group = constraint)) + 

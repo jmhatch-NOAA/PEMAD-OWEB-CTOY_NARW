@@ -52,7 +52,7 @@ active_weas = boem_wea_outlines |>
 
 # Approach
 
-Habitat-based North Atlantic right whale (NARW) density models for the U.S. Atlantic were downloaded from [OBIS-SEAMAP](https://seamap.env.duke.edu/models/Duke/EC/). The seasonal raster images were then deconstructed into data tables where each row represents a single grid cell, with columns representing attributes of that grid cell (e.g., cell id, centroid, month, density value). We then assigned each grid cell to several, nested areas by spatial intersection between the grid cell centroid and the considered areas polygons. Below are maps of the seasonal NARW density data, with superimposed white outlines that denote some of the considered areas.
+Habitat-based North Atlantic right whale (NARW) density models for the U.S. Atlantic were downloaded from [OBIS-SEAMAP](https://seamap.env.duke.edu/models/Duke/EC/). The seasonal raster images were then deconstructed into data tables where each row represents a single grid cell, with columns representing attributes of that grid cell (e.g., cell id, cell centroid, cell area, month, density value). We then assigned each grid cell to several, nested areas by spatial intersection between the grid cell centroid and the considered areas polygons. All spatial layers used a bespoke Albers Equal Area coordinate reference system developed by the Marine Geospatial Ecology Lab, Duke University (CetMap_NA). Below are maps of the seasonal NARW density data, with superimposed white outlines that denote some of the considered areas.
 
 ```{r narw-map, fig.width = 8, fig.height = 8, fig.align = 'left'}
 # data for ggplot2

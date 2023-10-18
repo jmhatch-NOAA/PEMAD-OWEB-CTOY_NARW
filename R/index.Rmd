@@ -78,6 +78,14 @@ dens_10km = narw_10km |>
   dplyr::summarise(density = quantile(value, probs = 0.9, na.rm = TRUE)) |>
   dplyr::ungroup()
 
+# 40km wea
+dens_40km = narw_40km |>
+  dplyr::filter(!is.na(wea_40km)) |>
+  sf::st_drop_geometry() |>
+  dplyr::group_by(month, wea_40km) |> 
+  dplyr::summarise(density = quantile(value, probs = 0.9, na.rm = TRUE)) |>
+  dplyr::ungroup()
+
 ############
 ## Shapes ##
 ############
@@ -123,7 +131,7 @@ Now a quick look at the distribution of seasonal NARW densities by active lease 
 ```{r boxplot, fig.width = 8, fig.height = 50, fig.align = 'left'}
 ggplot(data = narw_weas |> sf::st_drop_geometry() |> dplyr::filter(!is.na(wea)), aes(x = month, y = value * 100, fill = month)) +
   stat_summary(fun.data = boxplot_stat, geom = 'boxplot') + 
-  facet_wrap(~wea, ncol = 1, scales = 'free_y', drop = TRUE) + 
+  facet_wrap(~wea, ncol = 1, scales = 'free_y') + 
   theme_cowplot() + 
   theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold')) + 
   labs(y = 'density (whales / 100km2)') + 
@@ -133,7 +141,7 @@ ggplot(data = narw_weas |> sf::st_drop_geometry() |> dplyr::filter(!is.na(wea)),
 
 Now some line charts showing the 90th percentile of NARW densities extracted from various areas: 1) entire coast, 2) regions, 3) active lease WEAs, 4) active lease WEAs buffered by 10km, and 5) active lease WEAs buffered by 40 km (not yet implemented).
 
-```{r trigger, fig.width = 8, fig.height = 50, fig.align = 'left'}
+```{r trigger, fig.width = 8, fig.height = 75, fig.align = 'left'}
 # sequence of trigger values
 trigger = seq(0, 0.01, by = 0.001)[-1] # can't have the trigger be 0
 j = trigger[1]
@@ -153,6 +161,12 @@ for (i in wea_order) {
       dplyr::mutate(constraint = '10km') |>
       dplyr::rename(wea = wea_10km)
     
+    # filter data by wea bufferd by 40km
+    wea_40km_filt = dens_40km |>
+      dplyr::filter(wea_40km == i) |>
+      dplyr::mutate(constraint = '40km') |>
+      dplyr::rename(wea = wea_40km)
+    
     # what region?
     wea_region = narw_weas |>
       dplyr::filter(wea == i) |>
@@ -170,28 +184,18 @@ for (i in wea_order) {
       dplyr::mutate(constraint = 'Coastwide', wea = i)
     
     # combine
-    data_gg = dplyr::bind_rows(wea_filt, wea_10km_filt, region_filt, coast_filt) |>
-      dplyr::mutate(constraint = factor(constraint, levels = c('0km', '10km', wea_region, 'Coastwide'))) |>
+    data_gg = dplyr::bind_rows(wea_filt, wea_10km_filt, wea_40km_filt, region_filt, coast_filt) |>
+      dplyr::mutate(constraint = factor(constraint, levels = c('0km', '10km', '40km', wea_region, 'Coastwide'))) |>
       dplyr::mutate(ctoy = ifelse(density > j, TRUE, FALSE))
 
     # plot
-    if (i == wea_order[length(wea_order)]) {
-      plt = ggplot(data = data_gg, aes(x = month, y = density * 100, color = constraint, group = constraint)) + 
-        geom_point(size = 3) +
-        geom_line(linewidth = 1) + 
-        theme_cowplot() + 
-        facet_wrap(~wea) + 
-        theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold'), legend.position = 'bottom', legend.title = element_blank()) + 
-        labs(x = NULL, y = NULL) 
-    } else {
-      plt = ggplot(data = data_gg, aes(x = month, y = density * 100, color = constraint, group = constraint)) + 
-        geom_point(size = 3) +
-        geom_line(linewidth = 1) + 
-        theme_cowplot() + 
-        facet_wrap(~wea) + 
-        theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold'), legend.position = 'bottom', legend.title = element_blank()) + 
-        labs(x = NULL, y = NULL) 
-    }
+    plt = ggplot(data = data_gg, aes(x = month, y = density * 100, color = constraint, group = constraint)) + 
+      geom_point(size = 3) + 
+      geom_line(linewidth = 1) +
+      theme_cowplot() + 
+      facet_wrap(~wea) + 
+      theme(strip.background = element_blank(), strip.text = element_text(hjust = 0, face = 'bold'), legend.position = 'bottom', legend.title = element_blank()) + 
+      labs(x = NULL, y = NULL) 
 
     # add to plot list
     plt_list[[which(wea_order %in% i)]] = plt

@@ -40,6 +40,12 @@ narw_dens = here::here('data', 'ctoy_density_final.csv') |>
   dplyr::mutate(month = factor(month, levels = month_order, labels = month.abb),
                 wea = factor(wea, levels = wea_order))
 
+# narw for trigger
+narw_trigger = here::here('data', 'ctoy_density_trigger.csv') |>
+  readr::read_csv() |>
+  dplyr::mutate(month = factor(month, levels = month_order, labels = month.abb),
+                wea = factor(wea, levels = wea_order))
+
 # ctoy regions
 ctoy_regions = here::here('data-raw', 'shapefiles', 'regions', 'CTOY_Investigation.shp') |>
   sf::st_read(quiet = TRUE) 
@@ -119,4 +125,61 @@ ggplot(data = narw_dens |> dplyr::mutate(constraint = factor(constraint, levels 
           legend.title = element_blank(),
           legend.position = 'bottom') + 
     labs(x = 'month', y = 'density (whales / 100km2)') 
+```
+
+## Case Study of Potential Thresholds for OCS-A 0501 - Vineyard Wind 1 LLC
+
+Choosing a threshold for when to temporally restrict offshore wind farm (OWF) construction is complicated. Potential thresholds could include both relative and absolute measures. Relative measures can assess 'habitat preference', comparing a value extracted from a WEA to a value at the regional or coastwide scale. Relative thresholds over 1 would indicate that NARW density is higher inside the WEA relative to the region or the entire coast (or some other reference), potentially suggesting preferential use of the WEA by NARWs.
+
+```{r triggerm, fig.width = 8.13, fig.height = 5.48, fig.align = 'left'}
+# data for relative trigger
+case_study = narw_trigger |>
+  dplyr::filter(wea == 'OCS-A 0501') |>
+  dplyr::arrange(month) |>
+  dplyr::mutate(trigger_v1 = wea_0km / region,
+                trigger_v2 = wea_0km / coastwide,
+                trigger_v3 = wea_10km / region,
+                trigger_v4 = wea_10km / coastwide,
+                trigger_v5 = wea_40km / region,
+                trigger_v6 = wea_40km / coastwide)
+
+# wide to long
+case_long = case_study |> 
+  dplyr::select(-c(wea_0km:coastwide)) |>
+  tidyr::pivot_longer(cols = trigger_v1:trigger_v6, names_to = 'trigger', values_to = 'value') |>
+  dplyr::mutate(reference = dplyr::case_when(trigger %in% c('trigger_v1', 'trigger_v3', 'trigger_v5') ~ 'region', 
+                                             trigger %in% c('trigger_v2', 'trigger_v4', 'trigger_v6') ~ 'coastwide'),
+                wea = dplyr::case_when(trigger %in% c('trigger_v1', 'trigger_v2') ~ '0km', 
+                                       trigger %in% c('trigger_v3', 'trigger_v4') ~ '10km', 
+                                       trigger %in% c('trigger_v5', 'trigger_v6') ~ '40km'))
+
+# plot it out
+plt_rel = ggplot(data = case_long, aes(x = month, y = value, color = wea, group = trigger)) + 
+  geom_point(size = 3) + 
+  geom_line(linewidth = 1, aes(linetype = reference)) +
+  theme_cowplot() + 
+  geom_hline(yintercept = 1, linetype = 'dashed') + 
+  labs(title = 'relative', y = 'wea / reference')
+
+# data for absolute trigger
+abs_trigger = narw_dens |> 
+  dplyr::mutate(constraint = factor(constraint, levels = c('0km', '10km', '40km', 'Southern New England', 'Mid-Atlantic', 'Southeast', 'Coastwide'))) |>
+  dplyr::filter(wea == 'OCS-A 0501')
+
+# plot it out
+plt_abs = ggplot(data = abs_trigger, aes(x = month, y = density * 100, color = constraint, group = constraint)) + 
+  geom_point(size = 3) + 
+  geom_line(linewidth = 1) + 
+  theme_cowplot() + 
+  theme(strip.background = element_blank(), 
+        strip.text = element_text(hjust = 0, face = 'bold'), 
+        legend.title = element_blank()) + 
+  labs(title = 'absolute', y = 'density (whales / 100km2)') + 
+  geom_hline(yintercept = 1, linetype = 'dashed')
+
+# combine plots
+plt = do.call(rbind, lapply(list(plt_rel, plt_abs), ggplotGrob))
+
+# plot
+gridExtra::grid.arrange(plt)
 ```

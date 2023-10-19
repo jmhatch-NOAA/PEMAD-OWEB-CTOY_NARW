@@ -129,7 +129,7 @@ ggplot(data = narw_dens |> dplyr::mutate(constraint = factor(constraint, levels 
 
 ## Case Study of Potential Thresholds for OCS-A 0501 - Vineyard Wind 1 LLC
 
-Choosing a threshold for when to temporally restrict offshore wind farm (OWF) construction is complicated. Potential thresholds could include both relative and absolute measures. Relative measures can assess 'habitat preference', comparing a value extracted from a WEA to a value at the regional or coastwide scale. Relative thresholds over 1 would indicate that NARW density is higher inside the WEA relative to the region or the entire coast (or some other reference), potentially suggesting preferential use of the WEA by NARWs.
+Choosing a threshold for when to temporally restrict offshore wind farm (OWF) construction is complicated. Potential thresholds could include both relative and absolute measures. Relative measures can assess 'habitat preference', comparing a value extracted from a WEA to a value at the regional or coastwide scale. Relative thresholds over 1 would indicate that NARW density is higher inside the WEA relative to the region or the entire coast (or some other reference), potentially suggesting preferential use of the WEA by NARWs. [Stuff about absolute thresholds...]
 
 ```{r triggerm, fig.width = 8.13, fig.height = 5.48, fig.align = 'left'}
 # data for relative trigger

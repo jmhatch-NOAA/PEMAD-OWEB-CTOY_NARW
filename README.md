@@ -1,4 +1,4 @@
-# CTOY & NARWs & OFWs, Oh My! Project
+# CTOY & NARWs & OWFs, Oh My! Project
 
 [![gitleaks](https://github.com/jmhatch-NOAA/PEMAD-OWEB-CTOY_NARW/actions/workflows/secretScan.yml/badge.svg)](https://github.com/jmhatch-NOAA/PEMAD-OWEB-CTOY_NARW/actions/workflows/secretScan.yml) 
 

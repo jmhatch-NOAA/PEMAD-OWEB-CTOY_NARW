@@ -95,3 +95,49 @@ boxplot_stat = function(x) {
   names(stats) <- c('ymin', 'lower', 'middle', 'upper', 'ymax')
   return(stats)
 }
+
+#' @titlet Calculates the 90th percentile and mean density values by month and year
+#' @name group_calc
+#'
+#' @param x A \code{data.frame}
+#' 
+#' @returns A summarized \code{data.frame} with 90th percentile and mean density values appended
+#' 
+#' @export
+#' 
+group_calc = function(x, group_var) {
+  
+  # check that x is a data.frame
+  stopifnot(inherits(x = x, what = c('data.frame', 'sf')))
+  
+  # grab column names
+  month_var = 'month'
+  stopifnot(month_var %in% colnames(x))
+  year_vars = c('coast', 'region', 'wea', 'wea_10km', 'wea_40km')
+  stopifnot(any(year_vars %in% colnames(x)))
+  year_var = year_vars[which(year_vars %in% colnames(x))]
+  stopifnot(length(year_var) == 1)
+  stopifnot('value' %in% colnames(x))
+  
+  # group by month
+  dens_month = x |>
+    sf::st_drop_geometry() |> 
+    dplyr::filter(!is.na(!!rlang::sym(year_var))) |>
+    dplyr::group_by(!!rlang::sym(month_var), !!rlang::sym(year_var)) |> 
+    dplyr::summarise(dens_90 = quantile(value, probs = 0.9, na.rm = TRUE),
+                     dens_avg = mean(value, na.rm = TRUE)) |>
+    dplyr::ungroup()
+  
+  # group by year
+  dens_year = x |>
+    sf::st_drop_geometry() |> 
+    dplyr::filter(!is.na(!!rlang::sym(year_var))) |>
+    dplyr::group_by(!!rlang::sym(year_var)) |> 
+    dplyr::summarise(ann_90 = quantile(value, probs = 0.9, na.rm = TRUE),
+                     ann_avg = mean(value, na.rm = TRUE)) |>
+    dplyr::ungroup()
+  
+  # bind
+  return( dens_month |> dplyr::left_join(dens_year, by = year_var) )
+
+}

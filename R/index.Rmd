@@ -52,7 +52,7 @@ active_weas = boem_wea_outlines |>
 
 # Approach
 
-Habitat-based North Atlantic right whale (NARW) density models for the U.S. Atlantic were downloaded from [OBIS-SEAMAP](https://seamap.env.duke.edu/models/Duke/EC/). In order to account for uncertainty in the monthly predictions of NARW densities and to err on the side of precaution, we used the upper limit of the 95% confidence intervals around predicted densities for subsequent summarizations. The monthly images were deconstructed into data tables where each row represents a single grid cell, with columns representing attributes of that grid cell (e.g., cell id, cell centroid, cell area, month, density value). We then assigned each grid cell to several, nested areas by spatial intersection between the grid cell centroid and the considered areas polygons. All spatial layers used a bespoke Albers Equal Area coordinate reference system developed by the Marine Geospatial Ecology Lab, Duke University (CetMap_NA). Below are maps of the monthly NARW density data, with superimposed white outlines that denote some of the considered areas.
+Habitat-based North Atlantic right whale (NARW) density models for the U.S. Atlantic were downloaded from [OBIS-SEAMAP](https://seamap.env.duke.edu/models/Duke/EC/). In order to account for uncertainty in the monthly predictions of NARW densities and to err on the side of precaution, we used the upper limit of the 90% confidence intervals around predicted densities for subsequent summarizations. The monthly images were deconstructed into data tables where each row represents a single grid cell, with columns representing attributes of that grid cell (e.g., cell id, cell centroid, cell area, month, density value). We then assigned each grid cell to several, nested areas by spatial intersection between the grid cell centroid and the considered areas polygons. All spatial layers used a bespoke Albers Equal Area coordinate reference system developed by the Marine Geospatial Ecology Lab, Duke University (CetMap_NA). Below are maps of the monthly NARW density data, with superimposed white outlines that denote some of the considered areas.
 
 ```{r narw-map, fig.width = 8, fig.height = 8, fig.align = 'left'}
 # data for ggplot2
@@ -103,7 +103,7 @@ plt_list = purrr::map(.x = wea_order, .f = function(.x) {
     sf::st_drop_geometry() |> 
     dplyr::filter(wea == .x)
 
-  # format dat
+  # format data
   dens_data = narw_dens |> 
     dplyr::filter(wea == .x) |> 
     plyr::mutate(`Percentile (90th)` = ifelse(dens_90 > ann_90, 1, NA), 

@@ -98,7 +98,12 @@ DT::datatable(data_dt, options = list(iDisplayLength = 50))
 
 # Results
 
-Below are boxplots of the monthly NARW densities by active lease areas (again, roughly ordered from north to south). The boxplots were drawn such that the lower whisker represents the 10th percentile, the lower hinge represents the 25th percentile, the dot represents the mean, the line represents the median, the upper hinge represents the 75th percentile, and the upper whisker represents the 90th percentile. Underneath a boxplot are Gantt charts indicating months that should impose temporal restrictions on OWD using two thresholds (blue bars), 1) Average = is the average monthly density in the WEA greater than the average annual density in the WEA and 2) Percentile (90th), is the 90th percentile of monthly density in the WEA greater than the 90th percentile of density over the entire year in the WEA? The y-axis of the Gantt charts indicates the degree that active lease WEAs were buffered (0km = not buffered, 10km = buffered by 10km, and 40km = buffered by 40km).
+Below are boxplots of the monthly NARW densities by active lease area (again, roughly ordered from north to south). The boxplots were drawn such that the lower whisker represents the 10th percentile, the lower hinge represents the 25th percentile, the dot represents the mean, the line represents the median, the upper hinge represents the 75th percentile, and the upper whisker represents the 90th percentile. Underneath a boxplot are Gantt charts indicating months that should impose temporal restrictions on OWD using several metrics (blue bars): 
+1) 90th percentile
+2) 75th percentile
+3) 50th percentile
+4) Average
+For all metrics, the blue bar indicates when the monthly value exceeded the annual, regional value. The y-axis of the Gantt charts indicates the degree that active lease WEAs were buffered (0km = not buffered, 10km = buffered by 10km, and 40km = buffered by 40km).
 
 ```{r make-plots, fig.height = 8}
 # loop through WEAs

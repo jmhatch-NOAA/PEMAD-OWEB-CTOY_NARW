@@ -138,7 +138,6 @@ plt_list = purrr::map(.x = wea_order, .f = function(.x) {
     labs(x = NULL, y = NULL) + 
     guides(color = 'none') + 
     scale_x_discrete(labels = function(x) substr(x, 1, 1), expand = c(0, 0))
-  plt1
   
   # boxplot
   plt2 = ggplot(data = box_data, aes(x = month, y = value, fill = month)) +
@@ -148,10 +147,16 @@ plt_list = purrr::map(.x = wea_order, .f = function(.x) {
     labs(x = NULL, y = 'density (whales / 100km2)', title = .x) + 
     guides(fill = 'none') 
     # + geom_hline(yintercept = 1, linetype = 'dashed') # floor((4 / 100) / 3.429904 * 100)
-
-    # combine plots
-    plot_grid(plt2, plt1, ncol = 1, rel_heights = c(1/2, 1/2), align = 'v', axis = 'left')
   
+  # add line 
+  find_max = box_data |> dplyr::group_by(month) |> dplyr::reframe(values = boxplot_stat(value))
+  if (max(find_max$values) > 1) {
+    plt2 = plt2 + geom_hline(yintercept = 1, linetype = 'dashed')
+  }
+
+  # combine plots
+  plot_grid(plt2, plt1, ncol = 1, rel_heights = c(1/2, 1/2), align = 'v', axis = 'left')
+
 })
 ```
 

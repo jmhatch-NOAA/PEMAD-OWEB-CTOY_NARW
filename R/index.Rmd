@@ -141,7 +141,7 @@ plt_list = purrr::map(.x = wea_order, .f = function(.x) {
   plt1
   
   # boxplot
-  plt2 = ggplot(data = box_data, aes(x = month, y = value * 100, fill = month)) +
+  plt2 = ggplot(data = box_data, aes(x = month, y = value, fill = month)) +
     stat_summary(fun.data = boxplot_stat, geom = 'boxplot') + 
     stat_summary(fun = mean, geom = 'point', size = 3) + 
     theme_cowplot() + 

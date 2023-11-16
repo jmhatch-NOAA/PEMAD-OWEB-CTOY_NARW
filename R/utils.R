@@ -89,23 +89,28 @@ utm_zone_calc <- function(x) {
 #' @export
 #' 
 boxplot_stat = function(x) {
-  coef <- 1.5
-  n <- sum(!is.na(x))
+  
+  # calc. percentiles
   stats <- quantile(x, probs = c(0.1, 0.25, 0.5, 0.75, 0.9))
+  
+  # assign names
   names(stats) <- c('ymin', 'lower', 'middle', 'upper', 'ymax')
+  
+  # output
   return(stats)
+  
 }
 
-#' @titlet Calculates the 90th percentile and mean density values by month and year
+#' @titlet Calculates percentiles and mean density values by month, wea, and region
 #' @name group_calc
 #'
 #' @param x A \code{data.frame}
 #' 
-#' @returns A summarized \code{data.frame} with 90th percentile and mean density values appended
+#' @returns A summarized \code{data.frame} with percentiles and mean density values appended
 #' 
 #' @export
 #' 
-group_calc = function(x, group_var) {
+group_calc = function(x) {
   
   # check that x is a data.frame
   stopifnot(inherits(x = x, what = c('data.frame', 'sf')))
@@ -113,31 +118,27 @@ group_calc = function(x, group_var) {
   # grab column names
   month_var = 'month'
   stopifnot(month_var %in% colnames(x))
-  year_vars = c('coast', 'region', 'wea', 'wea_10km', 'wea_40km')
-  stopifnot(any(year_vars %in% colnames(x)))
-  year_var = year_vars[which(year_vars %in% colnames(x))]
-  stopifnot(length(year_var) == 1)
+  region_var = 'region'
+  stopifnot(region_var %in% colnames(x))
+  wea_vars = c('wea', 'wea_10km', 'wea_40km')
+  stopifnot(any(wea_vars %in% colnames(x)))
+  wea_var = wea_vars[which(wea_vars %in% colnames(x))]
+  year_vars = c(region_var, wea_var)
+  stopifnot(length(year_vars) == 2)
   stopifnot('value' %in% colnames(x))
   
   # group by month
   dens_month = x |>
     sf::st_drop_geometry() |> 
-    dplyr::filter(!is.na(!!rlang::sym(year_var))) |>
-    dplyr::group_by(!!rlang::sym(month_var), !!rlang::sym(year_var)) |> 
-    dplyr::summarise(dens_90 = quantile(value, probs = 0.9, na.rm = TRUE),
+    dplyr::group_by(!!rlang::sym(month_var), !!!rlang::syms(year_vars)) |> 
+    dplyr::summarise(dens_90 = quantile(value, probs = 0.90, na.rm = TRUE),
+                     dens_75 = quantile(value, probs = 0.75, na.rm = TRUE),
+                     dens_50 = quantile(value, probs = 0.50, na.rm = TRUE),
                      dens_avg = mean(value, na.rm = TRUE)) |>
-    dplyr::ungroup()
-  
-  # group by year
-  dens_year = x |>
-    sf::st_drop_geometry() |> 
-    dplyr::filter(!is.na(!!rlang::sym(year_var))) |>
-    dplyr::group_by(!!rlang::sym(year_var)) |> 
-    dplyr::summarise(ann_90 = quantile(value, probs = 0.9, na.rm = TRUE),
-                     ann_avg = mean(value, na.rm = TRUE)) |>
-    dplyr::ungroup()
-  
+    dplyr::ungroup() |>
+    tidyr::drop_na()
+
   # bind
-  return( dens_month |> dplyr::left_join(dens_year, by = year_var) )
+  return(dens_month)
 
 }

@@ -40,6 +40,16 @@ narw_dens = here::here('data', 'ctoy_density_final.csv') |>
   dplyr::mutate(month = factor(month, levels = month_order, labels = month.abb),
                 wea = factor(wea, levels = wea_order))
 
+# format data
+trigger_data = narw_dens |> 
+  dplyr::mutate(`Percentile (90th)` = ifelse(dens_90 > ann_reg_avg, 1, NA),
+                `Percentile (75th)` = ifelse(dens_75 > ann_reg_avg, 1, NA),
+                `Percentile (50th)` = ifelse(dens_50 > ann_reg_avg, 1, NA),
+                Average = ifelse(dens_avg > ann_reg_avg, 1, NA)) |> 
+  dplyr::select(-c(dens_90:ann_reg_avg)) |> 
+  tidyr::pivot_longer(cols = `Percentile (90th)`:Average, names_to = 'indicator', values_to = 'value') |>
+  dplyr::mutate(indicator = factor(indicator, levels = c('Percentile (90th)', 'Percentile (75th)', 'Percentile (50th)', 'Average')))
+
 # ctoy regions
 ctoy_regions = here::here('data-raw', 'shapefiles', 'regions', 'CTOY_Investigation.shp') |>
   sf::st_read(quiet = TRUE) 
@@ -103,9 +113,9 @@ Below are boxplots of the monthly NARW densities by active lease area (again, ro
 1)  90th percentile
 2)  75th percentile
 3)  50th percentile
-4)  Average 
+4)  Average
 
-For all metrics, the blue bar indicates when the monthly value exceeded the annual, regional value (value from the lease area relative to the value from the region). The y-axis of the Gantt charts indicates the degree that active lease areas were buffered (0km = not buffered, 10km = buffered by 10km, and 40km = buffered by 40km).
+For all metrics, the blue bar indicates when the monthly metric exceeded the average annual, regional density. The y-axis of the Gantt charts indicates the degree that active lease areas were buffered (0km = not buffered, 10km = buffered by 10km, and 40km = buffered by 40km).
 
 ```{r make-plots, fig.height = 8}
 # loop through WEAs
@@ -117,15 +127,8 @@ plt_list = purrr::map(.x = wea_order, .f = function(.x) {
     dplyr::filter(wea == .x)
 
   # format data
-  dens_data = narw_dens |> 
-    dplyr::filter(wea == .x) |> 
-    dplyr::mutate(`Percentile (90th)` = ifelse(dens_90 > ann_reg_90, 1, NA),
-                  `Percentile (75th)` = ifelse(dens_75 > ann_reg_75, 1, NA),
-                  `Percentile (50th)` = ifelse(dens_50 > ann_reg_50, 1, NA),
-                  Average = ifelse(dens_avg > ann_reg_avg, 1, NA)) |> 
-    dplyr::select(-c(dens_90:ann_reg_avg)) |> 
-    tidyr::pivot_longer(cols = `Percentile (90th)`:Average, names_to = 'indicator', values_to = 'value') |>
-    dplyr::mutate(indicator = factor(indicator, levels = c('Percentile (90th)', 'Percentile (75th)', 'Percentile (50th)', 'Average')))
+  dens_data = trigger_data |> 
+    dplyr::filter(wea == .x)
   
   # gantt chart
   plt1 = ggplot() + 
@@ -163,3 +166,29 @@ plt_list = purrr::map(.x = wea_order, .f = function(.x) {
 ```{r, echo = FALSE, results = 'hide', fig.keep = 'all'}
   print(plt_list)
 ```
+
+# Compare with PAM
+
+```{r reg-boxplot}
+reg_boxplot = ggplot(data = narw_weas |> dplyr::filter(!is.na(region)) |> dplyr::mutate(region = factor(region, levels = c('Gulf of Maine', 'Southern New England', 'Mid-Atlantic', 'Southeast')), month = factor(month, levels = month.abb[c(7:12, 1:6)])), aes(x = month, y = value, fill = month)) + 
+  stat_summary(fun.data = boxplot_stat, geom = 'boxplot') + 
+  stat_summary(fun = mean, geom = 'point', size = 3) + 
+  theme_cowplot() + 
+  labs(x = NULL, y = 'density (whales / 100km2)') + 
+  guides(fill = 'none') + 
+  facet_wrap(~region, nrow = 4, ncol = 1, scales = 'free_y') + 
+  theme(strip.background = element_blank(), strip.text = element_text(face = 'bold', hjust = 0)) 
+ggsave(filename = here::here('R', 'images', 'dens_boxplot_reg.jpg'), plot = reg_boxplot, width = 3000, height = 2700, units = 'px')
+# add_lines = narw_dens |> 
+#   dplyr::distinct(region, ann_reg_90, ann_reg_75, ann_reg_50, ann_reg_avg) |>
+#   tidyr::pivot_longer(cols = ann_reg_90:ann_reg_avg, names_to = 'metric', values_to = 'value')
+# reg_boxplot + geom_hline(data = add_lines, aes(yintercept = value), linetype = 'dashed')
+```
+
+```{r, figures-side, fig.show = "hold", out.width = "50%"}
+knitr::include_graphics(c("images/dens_boxplot_reg.jpg", "images/NARW_Weekly_Presence_OSW-regions_2015-2023.jpg"))
+``` 
+
+<!-- ![The predicted monthly density of NARWs summarized by region from  Roberts et al. (2016, 2023).](images/dens_boxplot_reg.jpg) -->
+
+<!-- ![The average number of days per week (per site / recorder) with NARW presence summarized by region between years 2015 - 2023.](images/NARW_Weekly_Presence_OSW-regions_2015-2023.jpg) -->

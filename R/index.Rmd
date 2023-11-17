@@ -71,6 +71,7 @@ Habitat-based North Atlantic right whale (NARW) density models for the U.S. Atla
 ```{r narw-map, fig.width = 8, fig.height = 8, fig.align = 'left'}
 # data for ggplot2
 narw_gg = narw_weas |>
+  # dplyr::filter(value > 0 | is.na(value)) |>
   dplyr::mutate(x = sf::st_coordinates(geometry)[, 1], y = sf::st_coordinates(geometry)[, 2]) |>
   sf::st_drop_geometry() |>
   dplyr::mutate(fill = cut(value, breaks = c(10, 6.3, 4, 2.5, 1.6, 1, 0.63, 0.40, 0.25, 0.16, 0.10, 0.063, 0.040, 0.025, 0.016, 0), include.lowest = TRUE))

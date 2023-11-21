@@ -58,10 +58,6 @@ ctoy_regions = here::here('data-raw', 'shapefiles', 'regions', 'CTOY_Investigati
 active_weas = boem_wea_outlines |>
   dplyr::filter(LEASE_STAGE == 'Active' & !STATE %in% c('CA', ' Louisanna/Texas') & LEASE_TYPE != 'Easement' & LEASE_NUMBER_COMPANY != 'OCS-A 0506 - The Narragansett Electric Company') |>
   sf::st_transform(crs = sf::st_crs(ctoy_regions))
-
-# remove Ocean Wind 1 & 2
-active_weas = active_weas |>
-  dplyr::filter(!LEASE_NUMBER %in% c('OCS-A 0498', 'OCS-A 0532'))
 ```
 
 # Approach
@@ -93,20 +89,6 @@ ggplot(data = narw_gg) +
   scale_x_continuous(breaks = c(-80, -70))
 ```
 
-In the following plots, we'll be summarizing the monthly NARW density data by active lease areas that are roughly ordered from north to south. A look up table that relates the lease number for active lease areas to their corresponding company and state is provided below.
-
-```{r lookup}
-# data for DT
-data_dt = active_weas |> 
-  dplyr::mutate(LEASE_NUMBER = factor(LEASE_NUMBER, levels = wea_order)) |>
-  dplyr::arrange(LEASE_NUMBER) |>
-  dplyr::filter(!is.na(LEASE_NUMBER)) |>
-  sf::st_drop_geometry() |>
-  dplyr::rename(Lease = LEASE_NUMBER, Company = COMPANY, State = STATE) |>
-  dplyr::select(Lease, Company, State)
-DT::datatable(data_dt, options = list(iDisplayLength = 50))
-```
-
 # Results
 
 Below are boxplots of the monthly NARW densities by active lease area (again, roughly ordered from north to south). The boxplots were drawn such that the lower whisker represents the 10th percentile, the lower hinge represents the 25th percentile, the dot represents the mean, the line represents the median, the upper hinge represents the 75th percentile, and the upper whisker represents the 90th percentile. Underneath a boxplot are Gantt charts indicating months that should impose temporal restrictions on OWD using several metrics (blue bars):
@@ -116,7 +98,7 @@ Below are boxplots of the monthly NARW densities by active lease area (again, ro
 3)  50th percentile
 4)  Average
 
-For all metrics, the blue bar indicates when the monthly metric exceeded the average annual, regional density. The y-axis of the Gantt charts indicates the degree that active lease areas were buffered (0km = not buffered, 10km = buffered by 10km, and 40km = buffered by 40km).
+For all metrics, the blue bar indicates when the monthly metric exceeded the respective average annual regional density. The y-axis of the Gantt charts indicates the degree that active lease areas were buffered (0km = not buffered, 10km = buffered by 10km, and 40km = buffered by 40km).
 
 ```{r make-plots, fig.height = 8}
 # loop through WEAs
@@ -143,12 +125,17 @@ plt_list = purrr::map(.x = wea_order, .f = function(.x) {
     guides(color = 'none') + 
     scale_x_discrete(labels = function(x) substr(x, 1, 1), expand = c(0, 0))
   
+  # grab company
+  company = active_weas |>
+    dplyr::filter(LEASE_NUMBER == .x) |>
+    dplyr::pull(LEASE_NUMBER_COMPANY)
+  
   # boxplot
   plt2 = ggplot(data = box_data, aes(x = month, y = value, fill = month)) +
     stat_summary(fun.data = boxplot_stat, geom = 'boxplot') + 
     stat_summary(fun = mean, geom = 'point', size = 3) + 
     theme_cowplot() + 
-    labs(x = NULL, y = 'density (whales / 100km2)', title = .x) + 
+    labs(x = NULL, y = 'density (whales / 100km2)', title = company) + 
     guides(fill = 'none') 
     # + geom_hline(yintercept = 1, linetype = 'dashed') # floor((4 / 100) / 3.429904 * 100)
   
@@ -180,10 +167,6 @@ reg_boxplot = ggplot(data = narw_weas |> dplyr::filter(!is.na(region)) |> dplyr:
   facet_wrap(~region, nrow = 4, ncol = 1, scales = 'free_y') + 
   theme(strip.background = element_blank(), strip.text = element_text(face = 'bold', hjust = 0)) 
 ggsave(filename = here::here('R', 'images', 'dens_boxplot_reg.jpg'), plot = reg_boxplot, width = 3000, height = 2700, units = 'px')
-# add_lines = narw_dens |> 
-#   dplyr::distinct(region, ann_reg_90, ann_reg_75, ann_reg_50, ann_reg_avg) |>
-#   tidyr::pivot_longer(cols = ann_reg_90:ann_reg_avg, names_to = 'metric', values_to = 'value')
-# reg_boxplot + geom_hline(data = add_lines, aes(yintercept = value), linetype = 'dashed')
 ```
 
 ```{r, figures-side, fig.show = "hold", out.width = "50%"}

@@ -98,7 +98,7 @@ Below are boxplots of the monthly NARW densities by active lease area (again, ro
 3)  50th percentile
 4)  Average
 
-For all metrics, the blue bar indicates when the monthly metric exceeded the respective average annual regional density. The y-axis of the Gantt charts indicates the degree that active lease areas were buffered (0km = not buffered, 10km = buffered by 10km, and 40km = buffered by 40km).
+For all metrics, the blue bar indicates when the monthly value exceeded the average annual density for the respective region. The y-axis of the Gantt charts indicates the degree that active lease areas were buffered (0km = not buffered, 10km = buffered by 10km, and 40km = buffered by 40km).
 
 ```{r make-plots, fig.height = 8}
 # loop through WEAs

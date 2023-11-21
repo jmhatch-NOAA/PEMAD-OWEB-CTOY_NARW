@@ -91,7 +91,7 @@ ggplot(data = narw_gg) +
 
 # Results
 
-Below are boxplots of the monthly NARW densities by active lease area (again, roughly ordered from north to south). The boxplots were drawn such that the lower whisker represents the 10th percentile, the lower hinge represents the 25th percentile, the dot represents the mean, the line represents the median, the upper hinge represents the 75th percentile, and the upper whisker represents the 90th percentile. Underneath a boxplot are Gantt charts indicating months that should impose temporal restrictions on OWD using several metrics (blue bars):
+Below are boxplots of the monthly NARW densities by active lease area (roughly ordered from north to south). The boxplots were drawn such that the lower whisker represents the 10th percentile, the lower hinge represents the 25th percentile, the dot represents the mean, the line represents the median, the upper hinge represents the 75th percentile, and the upper whisker represents the 90th percentile. Underneath a boxplot are Gantt charts indicating months that should impose temporal restrictions on OWD using several metrics (blue bars):
 
 1)  90th percentile
 2)  75th percentile

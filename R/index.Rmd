@@ -3,7 +3,7 @@ title: "Time of Year Restrictions for Offshore Wind Development (OWD)"
 output: html_document
 ---
 
-```{r setup, echo = FALSE, message = FALSE}
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
 # load libraries
@@ -34,7 +34,8 @@ narw_weas = here::here('data', 'narw_dens_weas.rds') |>
 narw_dens = here::here('data', 'ctoy_density_final.csv') |>
   readr::read_csv() |>
   dplyr::mutate(month = ordered(month, levels = month_order),
-                wea = factor(wea, levels = wea_order))
+                wea = factor(wea, levels = wea_order)) |>
+  dplyr::filter(!is.na(wea))
 
 # format data
 trigger_data = narw_dens |> 
@@ -87,16 +88,16 @@ ggplot(data = narw_gg) +
 
 # Results
 
-Below are boxplots of the monthly NARW densities by active lease area (roughly ordered from north to south). The boxplots were drawn such that the lower whisker represents the 10th percentile, the lower hinge represents the 25th percentile, the dot represents the mean, the line represents the median, the upper hinge represents the 75th percentile, and the upper whisker represents the 90th percentile. Underneath a boxplot are Gantt charts indicating months that should impose temporal restrictions on OWD using several metrics (blue bars):
+Below are boxplots of the monthly NARW densities by lease area (roughly ordered from north to south). The boxplots were drawn such that the lower whisker represents the 10th percentile, the lower hinge represents the 25th percentile, the dot represents the mean, the line represents the median, the upper hinge represents the 75th percentile, and the upper whisker represents the 90th percentile. Underneath a boxplot are Gantt charts indicating months that should impose temporal restrictions on OWD using several metrics (blue bars):
 
 1)  90th percentile
 2)  75th percentile
 3)  50th percentile
 4)  Average
 
-For all metrics, the blue bar indicates when the monthly value exceeded the average annual density for the respective region. As an example with the 90th percentile, the blue bar would indicate when the 90th percentile of monthly density in a lease area exceeded the average annual density for the respective region. The y-axis of the Gantt charts indicates the degree that active lease areas were buffered (0km = not buffered, 10km = buffered by 10km, and 40km = buffered by 40km).
+For all metrics, the blue bar indicates when the monthly value exceeded the average annual density for the respective region. As an example with the 90th percentile, the blue bar would indicate when the 90th percentile of monthly density in a lease area exceeded the average annual density for the respective region. The y-axis of the Gantt charts indicates the degree that lease areas were buffered (0km = not buffered, 10km = buffered by 10km, and 40km = buffered by 40km).
 
-```{r make-plots, fig.height = 8}
+```{r make-plots}
 # loop through WEAs
 plt_list = purrr::map(.x = wea_order, .f = function(.x) {
   
@@ -177,3 +178,32 @@ knitr::include_graphics(c("images/dens_boxplot_reg.jpg", "images/NARW_Weekly_Pre
 <!-- ![The predicted monthly density of NARWs summarized by region from  Roberts et al. (2016, 2023).](images/dens_boxplot_reg.jpg) -->
 
 <!-- ![The average number of days per week (per site / recorder) with NARW presence summarized by region between years 2015 - 2023.](images/NARW_Weekly_Presence_OSW-regions_2015-2023.jpg) -->
+
+## Heatmaps {.tabset}
+```{r tabsets, results = 'asis', out.width = "100%"}
+indicators = trigger_data |> 
+  dplyr::pull(indicator) |>
+  unique()
+
+# loop
+for (ii in indicators) {
+  cat("###", as.character(ii), "\n")
+  
+  # format data
+   trigger = trigger_data |>
+     dplyr::filter(indicator == ii & !is.na(wea)) |>
+     dplyr::mutate(wea = forcats::fct_rev(wea))
+
+  # heatmap
+  plt = ggplot(data = trigger, aes(x = month, y = wea)) + 
+    geom_tile(aes(fill = value)) + 
+    theme_cowplot() +
+    facet_wrap(~constraint, strip.position = "bottom") + 
+    labs(x = NULL, y = NULL) + 
+    guides(fill = 'none') + 
+    scale_x_discrete(position = 'top', labels = function(x) substr(x, 1, 1)) + 
+    theme(strip.background = element_blank(), strip.text = element_text(face = 'bold', hjust = 0)) 
+  print(plt)
+  cat("\n\n")
+}
+```

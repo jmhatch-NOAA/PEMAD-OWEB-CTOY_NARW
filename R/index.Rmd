@@ -175,8 +175,6 @@ ggsave(filename = here::here('R', 'images', 'dens_boxplot_reg.jpg'), plot = reg_
 knitr::include_graphics(c("images/dens_boxplot_reg.jpg", "images/NARW_Weekly_Presence_OSW-regions_2015-2023.jpg"))
 ``` 
 
-Automated way to monitor large jellyfish
-
 <!-- ![The predicted monthly density of NARWs summarized by region from  Roberts et al. (2016, 2023).](images/dens_boxplot_reg.jpg) -->
 
 <!-- ![The average number of days per week (per site / recorder) with NARW presence summarized by region between years 2015 - 2023.](images/NARW_Weekly_Presence_OSW-regions_2015-2023.jpg) -->

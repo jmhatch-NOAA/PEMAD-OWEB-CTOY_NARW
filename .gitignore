@@ -3,6 +3,7 @@
 inst/lit
 inst/R
 inst/scripts
+inst/old_figs
 data-raw/rasters/EC_North_Atlantic_right_whale_v12/Animations
 data-raw/rasters/EC_North_Atlantic_right_whale_v12/ArcGIS_Symbology
 data-raw/rasters/EC_North_Atlantic_right_whale_v12/Maps

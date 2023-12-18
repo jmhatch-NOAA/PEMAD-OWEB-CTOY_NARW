@@ -77,7 +77,7 @@ utm_zone_calc <- function(x) {
   
 }
 
-#' @titlet Calculate the statistics necessary for drawing a box plot with \code{ggplot2}
+#' @title Calculate the statistics necessary for drawing a box plot with \code{ggplot2}
 #' @name boxplot_stat
 #'
 #' @param x A \code{numeric} vector

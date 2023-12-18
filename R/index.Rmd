@@ -3,6 +3,12 @@ title: "Time of Year Restrictions for Offshore Wind Development (OWD)"
 output: html_document
 ---
 
+<br>
+<br>
+<font size="36">DRAFT - Results likely to change</font>
+<br>
+<br>
+
 ```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
@@ -37,13 +43,23 @@ narw_dens = here::here('data', 'ctoy_density_final.csv') |>
                 wea = factor(wea, levels = wea_order)) |>
   dplyr::filter(!is.na(wea))
 
-# format data
+# format data relative to region
 trigger_data = narw_dens |> 
   dplyr::mutate(`Percentile (90th)` = ifelse(dens_90 > ann_reg_avg, 1, NA),
                 `Percentile (75th)` = ifelse(dens_75 > ann_reg_avg, 1, NA),
                 `Percentile (50th)` = ifelse(dens_50 > ann_reg_avg, 1, NA),
                 Average = ifelse(dens_avg > ann_reg_avg, 1, NA)) |> 
-  dplyr::select(-c(dens_90:ann_reg_avg)) |> 
+  dplyr::select(-c(dens_90:ann_coast_avg)) |> 
+  tidyr::pivot_longer(cols = `Percentile (90th)`:Average, names_to = 'indicator', values_to = 'value') |>
+  dplyr::mutate(indicator = factor(indicator, levels = c('Percentile (90th)', 'Percentile (75th)', 'Percentile (50th)', 'Average')))
+
+# format data relative to entire coast
+trigger_data_coast = narw_dens |> 
+  dplyr::mutate(`Percentile (90th)` = ifelse(dens_90 > ann_coast_avg, 1, NA),
+                `Percentile (75th)` = ifelse(dens_75 > ann_coast_avg, 1, NA),
+                `Percentile (50th)` = ifelse(dens_50 > ann_coast_avg, 1, NA),
+                Average = ifelse(dens_avg > ann_coast_avg, 1, NA)) |> 
+  dplyr::select(-c(dens_90:ann_coast_avg)) |> 
   tidyr::pivot_longer(cols = `Percentile (90th)`:Average, names_to = 'indicator', values_to = 'value') |>
   dplyr::mutate(indicator = factor(indicator, levels = c('Percentile (90th)', 'Percentile (75th)', 'Percentile (50th)', 'Average')))
 
@@ -156,8 +172,6 @@ plt_list = purrr::map(.x = wea_order, .f = function(.x) {
   print(plt_list)
 ```
 
-# Compare with PAM
-
 ```{r reg-boxplot}
 # y-axis varies by facet
 reg_boxplot = ggplot(data = narw_weas |> dplyr::filter(!is.na(region)) |> dplyr::mutate(region = factor(region, levels = c('Gulf of Maine', 'Southern New England', 'Mid-Atlantic', 'Southeast')), month = factor(month, levels = month.name)), aes(x = month, y = value, fill = month)) + 
@@ -184,16 +198,22 @@ reg_boxplot_v2 = ggplot(data = narw_weas |> dplyr::filter(!is.na(region)) |> dpl
 ggsave(filename = here::here('R', 'images', 'dens_boxplot_reg_yaxis_fixed.jpg'), plot = reg_boxplot_v2, width = 3000, height = 2700, units = 'px')
 ```
 
-```{r, figures-side, fig.show = "hold", out.width = "50%"}
-knitr::include_graphics(c("images/dens_boxplot_reg.jpg", "images/NARW_Weekly_Presence_OSW-regions_2015-2023.jpg"))
+# Compare with PAM (y-axis scale fixed)
+```{r, figures-side-fixed, fig.show = "hold", out.width = "50%"}
+knitr::include_graphics(c("images/dens_boxplot_reg_yaxis_fixed.jpg", "images/NARW_Weekly_Presence_OSW-regions_v2_ndays_2015-2023.jpg"))
+``` 
+
+# Compare with PAM (y-axis scale free)
+```{r, figures-side-free, fig.show = "hold", out.width = "50%"}
+knitr::include_graphics(c("images/dens_boxplot_reg.jpg", "images/NARW_Weekly_Presence_OSW-regions_v2_ndays_2015-2023.jpg"))
 ``` 
 
 <!-- ![The predicted monthly density of NARWs summarized by region from  Roberts et al. (2016, 2023).](images/dens_boxplot_reg.jpg) -->
 
 <!-- ![The average number of days per week (per site / recorder) with NARW presence summarized by region between years 2015 - 2023.](images/NARW_Weekly_Presence_OSW-regions_2015-2023.jpg) -->
 
-## Metrics {.tabset}
-```{r tabsets, results = 'asis', out.width = "100%"}
+## Metrics relative to region {.tabset}
+```{r tabsets-region, results = 'asis', out.width = "100%"}
 
 # heatmaps for indicators
 indicators = trigger_data |> 
@@ -206,6 +226,37 @@ for (ii in indicators) {
   
   # format data
    trigger = trigger_data |>
+     dplyr::filter(indicator == ii & !is.na(wea)) |>
+     dplyr::mutate(wea = forcats::fct_rev(wea))
+
+  # heatmap
+  plt = ggplot(data = trigger, aes(x = month, y = wea)) + 
+    geom_tile(aes(fill = value)) + 
+    theme_cowplot() +
+    facet_wrap(~constraint, strip.position = "bottom") + 
+    labs(x = NULL, y = NULL) + 
+    guides(fill = 'none') + 
+    scale_x_discrete(position = 'top', labels = function(x) substr(x, 1, 1)) + 
+    theme(strip.background = element_blank(), strip.text = element_text(face = 'bold', hjust = 0)) 
+  print(plt)
+  cat("\n\n")
+}
+```
+
+## Metrics relative to coastwide {.tabset}
+```{r tabsets-coast, results = 'asis', out.width = "100%"}
+
+# heatmaps for indicators
+indicators = trigger_data_coast |> 
+  dplyr::pull(indicator) |>
+  unique()
+
+# loop
+for (ii in indicators) {
+  cat("###", as.character(ii), "\n")
+  
+  # format data
+   trigger = trigger_data_coast |>
      dplyr::filter(indicator == ii & !is.na(wea)) |>
      dplyr::mutate(wea = forcats::fct_rev(wea))
 

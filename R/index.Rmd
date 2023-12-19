@@ -198,6 +198,11 @@ reg_boxplot_v2 = ggplot(data = narw_weas |> dplyr::filter(!is.na(region)) |> dpl
 ggsave(filename = here::here('R', 'images', 'dens_boxplot_reg_yaxis_fixed.jpg'), plot = reg_boxplot_v2, width = 3000, height = 2700, units = 'px')
 ```
 
+# PAM
+```{r, monthly-pam, fig.show = "hold", out.width = "100%", fig.cap = 'Boxplots showing the average monthly percent of days present for NARWs. The boxplots were drawn such that the lower and upper hinges correspond to the first and third quartiles (the 25th and 75th percentiles). The upper whisker extends from the hinge to the largest value no further than 1.5 * IQR from the hinge (where IQR is the inter-quartile range, or distance between the first and third quartiles). The lower whisker extends from the hinge to the smallest value at most 1.5 * IQR of the hinge. Data beyond the end of the whiskers are called "outlying" points and are plotted individually.'}
+knitr::include_graphics("images/NARW_Avg_Monthly_Presence_OSW-regions_2015-2023.jpg")
+```
+
 # Compare with PAM (y-axis scale fixed)
 ```{r, figures-side-fixed, fig.show = "hold", out.width = "50%"}
 knitr::include_graphics(c("images/dens_boxplot_reg_yaxis_fixed.jpg", "images/NARW_Weekly_Presence_OSW-regions_v2_ndays_2015-2023.jpg"))

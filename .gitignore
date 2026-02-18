@@ -1,9 +1,7 @@
 .Rproj.user
 .git
-inst/lit
-inst/R
-inst/scripts
-inst/old_figs
+.Rhistory
+inst/
 data-raw/rasters/EC_North_Atlantic_right_whale_v12/Animations
 data-raw/rasters/EC_North_Atlantic_right_whale_v12/ArcGIS_Symbology
 data-raw/rasters/EC_North_Atlantic_right_whale_v12/Maps
@@ -11,3 +9,12 @@ data-raw/rasters/EC_North_Atlantic_right_whale_v12/AFTT_Marine_Mammal_Density_Mo
 data-raw/rasters/EC_North_Atlantic_right_whale_v12/NARW_v12.1_report.pdf
 data-raw/rasters/EC_North_Atlantic_right_whale_v12/Roberts_et_al_2016.pdf
 data-raw/csv
+data-raw/rasters/EC_North_Atlantic_right_whale_v12.1/AFTT_Marine_Mammal_Density_Models_2022_v1.3.pdf
+data-raw/rasters/EC_North_Atlantic_right_whale_v12.1/Animations
+data-raw/rasters/EC_North_Atlantic_right_whale_v12.1/ArcGIS_Symbology
+data-raw/rasters/EC_North_Atlantic_right_whale_v12.1/Maps
+data-raw/rasters/EC_North_Atlantic_right_whale_v12.1/NARW_v12.1_report.pdf
+data-raw/rasters/EC_North_Atlantic_right_whale_v12.1/Roberts_et_al_2016.pdf
+data/PryorBarthelmie_Wakemasks.nc
+R/wind_shadows.R
+R/rmarkdown_render.R

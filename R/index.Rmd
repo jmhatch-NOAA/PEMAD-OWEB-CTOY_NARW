@@ -26,7 +26,7 @@ duke_colors = c('#7a0402', '#b01c02', '#d93b07', '#f26518', '#fc9c2d', '#f2c738'
 month_order = c('October', 'November', 'December', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October2')
 
 # WEA order (roughly North to South)
-wea_order = c('OCS-A 0486', 'OCS-A 0517', 'OCS-A 0487', 'OCS-A 0500', 'OCS-A 0501', 'OCS-A 0534', 'OCS-A 0520', 'OCS-A 0521', 'OCS-A 0522', 'OCS-A 0512', 'OCS-A 0544', 'OCS-A 0537', 'OCS-A 0538', 'OCS-A 0539', 'OCS-A 0541', 'OCS-A 0542', 'OCS-A 0549', 'OCS-A 0499', 'OCS-A 0498', 'OCS-A 0532', 'OCS-A 0482', 'OCS-A 0519', 'OCS-A 0490', 'OCS-A 0483', 'OCS-A 0508', 'OCS-A 0545', 'OCS-A 0546')
+wea_order = c('OCS-A 0562', 'OCS-A 0564', 'OCS-A 0567', 'OCS-A 0568', 'OCS-A 0486', 'OCS-A 0517', 'OCS-A 0487', 'OCS-A 0500', 'OCS-A 0501', 'OCS-A 0534', 'OCS-A 0520', 'OCS-A 0521', 'OCS-A 0522', 'OCS-A 0512', 'OCS-A 0544', 'OCS-A 0537', 'OCS-A 0538', 'OCS-A 0539', 'OCS-A 0541', 'OCS-A 0542', 'OCS-A 0549', 'OCS-A 0499', 'OCS-A 0498', 'OCS-A 0532', 'OCS-A 0482', 'OCS-A 0519', 'OCS-A 0490', 'OCS-A 0483', 'OCS-A 0508', 'OCS-A 0545', 'OCS-A 0546')
 ```
 
 ```{r data}

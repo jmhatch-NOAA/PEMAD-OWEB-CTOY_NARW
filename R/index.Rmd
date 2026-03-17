@@ -168,10 +168,17 @@ plt_list = purrr::map(.x = wea_order, .f = function(.x) {
     theme(axis.text.x = element_blank())
     # + geom_hline(yintercept = 1, linetype = 'dashed') # floor((4 / 100) / 3.429904 * 100)
   
+  # get y-axis precision for boxplot
+  plt2_build = ggplot2::ggplot_build(plt2)
+  plt2_ylabs = plt2_build$layout$panel_params[[1]]$y$get_labels()
+  plt2_prec = stringr::str_split_i(string = na.omit(plt2_ylabs), pattern = '\\.', i = 2) |> nchar() |> unique()
+  plt3_prec = paste0('0.', paste(rep('0', plt2_prec - 1), collapse = ''), '1') |>
+    as.numeric()
+  
   # anomoly plot
   plt3 = ggplot(data = dens_R, aes(x = month, y = log_anomaly, fill = behavior)) + 
     geom_col(color = 'black', alpha = 0.85, width = 0.7) + 
-    scale_y_continuous(breaks = 0.0, labels = scales::label_number(accuracy = 0.1)) +
+    scale_y_continuous(breaks = 0, labels = scales::label_number(accuracy = plt3_prec)) +
     geom_hline(yintercept = 0, color = 'black') + 
     scale_fill_manual(values = c('Selection (R > 1)' = '#d73027', 'Avoidance (R < 1)' = '#4575b4')) + 
     labs(x = NULL, y = 'ln(R)') + 

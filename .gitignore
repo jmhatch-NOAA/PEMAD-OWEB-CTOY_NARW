@@ -16,6 +16,10 @@ data-raw/rasters/EC_North_Atlantic_right_whale_v12.1/NARW_v12.1_report.pdf
 data-raw/rasters/EC_North_Atlantic_right_whale_v12.1/Roberts_et_al_2016.pdf
 data-raw/csv
 data/PryorBarthelmie_Wakemasks.nc
+data/example
 R/wind_shadows.R
 R/rmarkdown_render.R
 R/images
+R/round_2.R
+R/to_do_after_meeting
+R/example_case_study.R
